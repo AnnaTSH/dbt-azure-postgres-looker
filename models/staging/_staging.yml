@@ -1,0 +1,109 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: Typed order lines. One row per row_id. Dates are dates and postal codes are 5-character text.
+    columns:
+      - name: row_id
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+      - name: ship_date
+        tests:
+          - not_null
+      - name: ship_mode
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Standard Class', 'Second Class', 'First Class', 'Same Day']
+      - name: customer_id
+        tests:
+          - not_null
+      - name: customer_name
+        tests:
+          - not_null
+      - name: segment
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Consumer', 'Corporate', 'Home Office']
+      - name: country
+        tests:
+          - not_null
+      - name: city
+        tests:
+          - not_null
+      - name: state
+        tests:
+          - not_null
+      - name: postal_code
+      - name: region
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Central', 'East', 'South', 'West']
+      - name: product_id
+        tests:
+          - not_null
+      - name: category
+        tests:
+          - not_null
+      - name: sub_category
+        tests:
+          - not_null
+      - name: product_name
+        tests:
+          - not_null
+      - name: sales
+        tests:
+          - not_null
+      - name: quantity
+        tests:
+          - not_null
+      - name: discount
+        tests:
+          - not_null
+      - name: profit
+        tests:
+          - not_null
+
+  - name: stg_returns
+    description: One row per returned order. The raw sheet repeats order ids; this model keeps each id once.
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: returned
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true]
+
+  - name: stg_people
+    description: One regional manager per region.
+    columns:
+      - name: regional_manager
+        tests:
+          - not_null
+      - name: region
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Central', 'East', 'South', 'West']

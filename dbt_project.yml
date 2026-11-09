@@ -1,0 +1,31 @@
+name: dbt_azure_postgres_looker
+version: 1.0.0
+config-version: 2
+profile: dbt_azure_postgres_looker
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: target
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  dbt_azure_postgres_looker:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +schema: staging
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+
+seeds:
+  dbt_azure_postgres_looker:
+    +schema: raw
+    # Local stand-in for Airbyte. Off on azure so a build does not replace raw tables.
+    +enabled: "{{ target.name == 'dev' }}"

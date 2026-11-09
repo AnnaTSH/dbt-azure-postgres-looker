@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: One row per day from the earliest order or ship date through the latest.
+    columns:
+      - name: date_day
+        tests:
+          - unique
+          - not_null
+      - name: year
+        tests:
+          - not_null
+      - name: quarter
+        tests:
+          - not_null
+      - name: month
+        tests:
+          - not_null
+
+  - name: dim_customer
+    description: One row per customer id.
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        tests:
+          - not_null
+      - name: segment
+        tests:
+          - not_null
+
+  - name: dim_product
+    description: >
+      One row per product id and product name. Category and sub-category are
+      stable for a product id; the name is not, so the name is part of the key.
+    columns:
+      - name: product_key
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: product_name
+        tests:
+          - not_null
+      - name: category
+        tests:
+          - not_null
+      - name: sub_category
+        tests:
+          - not_null
+
+  - name: dim_location
+    description: One row per city, state, postal code, and region. Country is an attribute.
+    columns:
+      - name: location_id
+        tests:
+          - unique
+          - not_null
+      - name: city
+        tests:
+          - not_null
+      - name: state
+        tests:
+          - not_null
+      - name: postal_code
+      - name: region
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region_manager')
+                field: region
+      - name: country
+        tests:
+          - not_null
+
+  - name: dim_region_manager
+    description: One manager per Superstore region, from the people file.
+    columns:
+      - name: region
+        tests:
+          - unique
+          - not_null
+      - name: regional_manager
+        tests:
+          - not_null
+
+  - name: fact_order_line
+    description: >
+      One row per order line (row_id). is_returned is true for every line on
+      an order that appears in returns. product_key is product id plus product name.
+    columns:
+      - name: row_id
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: ship_date
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: ship_mode
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_id
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: product_id
+        tests:
+          - not_null
+      - name: location_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: location_id
+      - name: region
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region_manager')
+                field: region
+      - name: sales
+        tests:
+          - not_null
+      - name: quantity
+        tests:
+          - not_null
+      - name: discount
+        tests:
+          - not_null
+      - name: profit
+        tests:
+          - not_null
+      - name: is_returned
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

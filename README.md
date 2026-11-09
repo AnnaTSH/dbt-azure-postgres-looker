@@ -45,16 +45,25 @@ A dbt project with two outputs in `profiles.yml`: `dev` (Docker Postgres) and `a
 
 - `dim_date` covers 2018-01-03 through 2022-01-05 so both order date and ship date resolve.
 - `dim_customer` is one row per customer id (793 customers).
-- `dim_product` is one row per product id (1,862 products), with category, sub-category, and product name.
+- `dim_product` is one row per product id and product name (1,894 rows). The file has 1,862 product ids, and 32 of them are sold under two names. Category and sub-category stay the same for a product id. The fact uses `product_key` for the id-and-name pair.
 - `dim_location` is city, state, postal code, and region. Country is United States on every line, so it is an attribute here.
 - `dim_region_manager` is the four people, joined to location on region.
-- `fact_order_line` is one row per `Row ID`. Measures are sales, quantity, discount, and profit. `is_returned` comes from `stg_returns` at order grain. Foreign keys point at the dimensions.
+- `fact_order_line` is one row per `Row ID`. Measures are sales, quantity, discount, and profit. `is_returned` comes from `stg_returns` at order grain. Foreign keys are `customer_id`, `product_key`, `location_id`, `order_date`, `ship_date`, and `region`.
 
 `Row ID` is the fact key. `Order ID` plus `Product ID` repeats on 8 lines, so that pair cannot be the key. Ship date is on or after order date on every line.
 
 **Tests** to ship with the models: `unique` and `not_null` on `row_id`; every return `order_id` exists on orders; `ship_date >= order_date`; accepted values for segment, region, and ship mode; a null postal code is allowed only for Vermont.
 
 `dbt build` should pass on `dev`, then on `azure`.
+
+The dbt project is in this repo. `seeds/` holds CSV copies of the three workbooks so local builds do not wait on Airbyte. Date columns in the seeds are Excel serials, and postal codes are unpadded text. The `dev` target builds from those seeds into `raw`, then `staging`, then `marts`. The `azure` target reads `raw.orders`, `raw.people`, and `raw.returns` with the same column names, and its seeds are disabled so a build does not replace tables Airbyte loaded.
+
+Copy `profiles.yml.example` to `~/.dbt/profiles.yml`. `dev` uses `DBT_HOST`, `DBT_PORT`, `DBT_USER`, `DBT_PASSWORD`, and `DBT_DBNAME` (defaults: localhost, 5432, postgres, postgres, superstore). `azure` uses `AZURE_POSTGRES_HOST`, `AZURE_POSTGRES_USER`, `AZURE_POSTGRES_PASSWORD`, and `AZURE_POSTGRES_DB`, with SSL required.
+
+```bash
+dbt build
+dbt build --target azure
+```
 
 ### 5. Looker
 Commit LookML for the marts: one view per dimension, one view for `fact_order_line`, and an explore that joins them. Looker connects to the `marts` schema on Azure (or to local Postgres while developing).
